@@ -11,6 +11,7 @@ An MCP (Model Context Protocol) server for integrating with the WCLASSGAMES API.
 - [Configuration](#configuration)
 - [Usage with Claude Desktop](#usage-with-claude-desktop)
 - [Tool Usage Examples](#tool-usage-examples)
+- [Programmatic Usage](#programmatic-usage)
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
@@ -452,6 +453,65 @@ Retrieve a list of game transactions.
 }
 ```
 
+## Programmatic Usage
+
+You can also use the MCP server programmatically in your Node.js applications. See the `examples/` directory for complete examples.
+
+### Quick Start
+
+```bash
+cd examples
+npm install
+npm run example:basic
+```
+
+### Example: Connect and Call Tools
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+// Create transport
+const transport = new StdioClientTransport({
+  command: 'node',
+  args: ['/path/to/wclass-games/dist/index.js'],
+});
+
+// Create client
+const client = new Client(
+  { name: 'my-client', version: '1.0.0' },
+  { capabilities: {} }
+);
+
+// Connect
+await client.connect(transport);
+
+// List tools
+const tools = await client.listTools();
+console.log('Available tools:', tools.tools.map(t => t.name));
+
+// Call a tool
+const result = await client.callTool({
+  name: 'get_agent_balance',
+  arguments: {}
+});
+console.log('Result:', result);
+
+// Disconnect
+await client.close();
+```
+
+### Available Examples
+
+| Example | Description | Command |
+|---------|-------------|---------|
+| `basic-client.ts` | Connect and list tools | `npm run example:basic` |
+| `agent-operations.ts` | Agent balance & game launch | `npm run example:agent` |
+| `player-operations.ts` | Deposit, withdraw, balance | `npm run example:player` |
+| `transaction-queries.ts` | Query transaction history | `npm run example:transactions` |
+
+See [examples/README.md](examples/README.md) for detailed documentation.
+
 ## Development
 
 ### Run in Development Mode
@@ -501,6 +561,12 @@ wclass-games/
 │   │   └── datafeed.service.ts     # Transaction queries
 │   └── tools/
 │       └── index.ts          # MCP tool definitions
+├── examples/                 # Usage examples
+│   ├── mcp-client.ts         # MCP client wrapper
+│   ├── basic-client.ts       # Basic connection example
+│   ├── agent-operations.ts   # Agent operations example
+│   ├── player-operations.ts  # Player operations example
+│   └── transaction-queries.ts # Transaction queries example
 ├── dist/                     # Compiled JavaScript output
 ├── .env                      # Environment variables (not in git)
 ├── .env.example              # Environment template
