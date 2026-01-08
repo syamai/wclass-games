@@ -1,16 +1,17 @@
 {
   "name": "wclassgames-mcp-examples",
   "version": "1.0.0",
-  "description": "Examples for using WCLASSGAMES MCP Server",
+  "description": "Examples for using WCLASSGAMES MCP Server from GitHub",
   "type": "module",
   "scripts": {
+    "postinstall": "cd node_modules/wclassgames-mcp && npm install && npm run build",
     "example:basic": "tsx basic-client.ts",
     "example:agent": "tsx agent-operations.ts",
     "example:player": "tsx player-operations.ts",
-    "example:transactions": "tsx transaction-queries.ts",
-    "example:all": "tsx run-all-examples.ts"
+    "example:transactions": "tsx transaction-queries.ts"
   },
   "dependencies": {
+    "wclassgames-mcp": "github:syamai/wclass-games",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {

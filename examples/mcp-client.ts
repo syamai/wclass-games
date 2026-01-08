@@ -2,14 +2,14 @@
  * MCP Client Wrapper for WCLASSGAMES
  *
  * This module provides a simple interface to connect to the WCLASSGAMES MCP server
- * and call its tools.
+ * installed from GitHub (github:syamai/wclass-games).
  */
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { spawn } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -25,8 +25,24 @@ export class WclassGamesMcpClient {
   private envPath: string;
 
   constructor(options: McpClientOptions = {}) {
-    this.serverPath = options.serverPath || resolve(__dirname, '..', 'dist', 'index.js');
-    this.envPath = options.envPath || resolve(__dirname, '..', '.env');
+    // Default: Use server from node_modules (installed from GitHub)
+    const defaultServerPath = resolve(__dirname, 'node_modules', 'wclassgames-mcp', 'dist', 'index.js');
+
+    // Fallback: Use local parent directory (for development)
+    const fallbackServerPath = resolve(__dirname, '..', 'dist', 'index.js');
+
+    if (options.serverPath) {
+      this.serverPath = options.serverPath;
+    } else if (existsSync(defaultServerPath)) {
+      this.serverPath = defaultServerPath;
+    } else if (existsSync(fallbackServerPath)) {
+      this.serverPath = fallbackServerPath;
+    } else {
+      this.serverPath = defaultServerPath; // Will fail with helpful error
+    }
+
+    // Default: Use .env in current examples directory
+    this.envPath = options.envPath || resolve(__dirname, '.env');
   }
 
   /**
@@ -36,6 +52,13 @@ export class WclassGamesMcpClient {
     console.log('🔌 Connecting to WCLASSGAMES MCP Server...');
     console.log(`   Server: ${this.serverPath}`);
     console.log(`   Env: ${this.envPath}`);
+
+    if (!existsSync(this.serverPath)) {
+      throw new Error(
+        `MCP server not found at ${this.serverPath}\n` +
+        `Please run 'npm install' first to install the server from GitHub.`
+      );
+    }
 
     this.transport = new StdioClientTransport({
       command: 'node',
