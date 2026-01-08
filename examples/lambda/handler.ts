@@ -14,12 +14,15 @@
  *   - WCLASSGAMES_PUBLIC_KEY: RSA 공개키 (서명 검증용)
  */
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyEventV2, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { createVerify } from 'crypto';
 
 // ============================================================================
 // 타입 정의
 // ============================================================================
+
+// HTTP API v2 또는 REST API v1 이벤트 모두 지원
+type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
 interface User {
   id: string;
@@ -51,12 +54,21 @@ const processedTransactions: Map<string, TransactionResult> = new Map();
 // ============================================================================
 
 export const handler = async (
-  event: APIGatewayProxyEvent,
+  event: LambdaEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
-  const { httpMethod, path, headers, body } = event;
+  // HTTP API v2와 REST API v1 이벤트 모두 지원
+  const isV2 = 'version' in event && event.version === '2.0';
+  const path = isV2
+    ? (event as APIGatewayProxyEventV2).rawPath
+    : (event as APIGatewayProxyEvent).path;
+  const httpMethod = isV2
+    ? (event as APIGatewayProxyEventV2).requestContext.http.method
+    : (event as APIGatewayProxyEvent).httpMethod;
+  const headers = event.headers;
+  const body = event.body ?? null;
 
   try {
     // 라우팅
@@ -86,7 +98,7 @@ export const handler = async (
 // ============================================================================
 
 function handleAuthenticate(
-  headers: APIGatewayProxyEvent['headers']
+  headers: Record<string, string | undefined>
 ): APIGatewayProxyResult {
   console.log('[Authenticate] Processing...');
 
@@ -163,7 +175,7 @@ function handleBalance(body: string | null): APIGatewayProxyResult {
 // ============================================================================
 
 function handleTransaction(
-  headers: APIGatewayProxyEvent['headers'],
+  headers: Record<string, string | undefined>,
   body: string | null
 ): APIGatewayProxyResult {
   console.log('[Transaction] Processing...');
