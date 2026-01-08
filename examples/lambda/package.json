@@ -1,0 +1,17 @@
+{
+  "name": "wclassgames-agent-lambda",
+  "version": "1.0.0",
+  "description": "WCLASSGAMES Agent Callback Server for AWS Lambda",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "npm run build && cd dist && zip -r ../lambda.zip .",
+    "deploy": "npm run package && aws lambda update-function-code --function-name wclassgames-agent --zip-file fileb://lambda.zip"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.131",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}
