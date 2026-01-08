@@ -1,317 +1,158 @@
 # WCLASSGAMES MCP Examples
 
-This directory contains example code demonstrating how to use the WCLASSGAMES MCP server.
+WCLASSGAMES MCP 서버 연동 예제입니다.
 
-**The MCP server is automatically installed from GitHub** - no need to clone or build the server separately!
+---
 
-## Quick Start
+## 추가된 파일
 
-### 1. Create a new project directory
-
-```bash
-mkdir my-wclassgames-app
-cd my-wclassgames-app
+```
+examples/
+├── README.md              # 예제 설명 문서
+├── agent-server.ts        # Agent Callback API 서버 샘플 (Express.js)
+├── mcp-client-usage.ts    # MCP 클라이언트 사용 예제
+└── simple-usage.md        # 간단한 사용 가이드 (한국어)
 ```
 
-### 2. Copy the example files
+---
 
-Copy these files from the examples directory:
-- `package.json`
-- `tsconfig.json`
-- `mcp-client.ts`
-- Any example files you want to run (e.g., `basic-client.ts`)
-
-Or clone just the examples:
-```bash
-git clone --depth 1 https://github.com/syamai/wclass-games.git temp
-cp -r temp/examples/* .
-rm -rf temp
-```
-
-### 3. Install dependencies
+## 1. Agent 콜백 서버 샘플 실행
 
 ```bash
+cd /Users/ahnsungbin/Source/wclass-games/examples
 npm install
+npm run server
 ```
 
-This will:
-1. Install the MCP server from GitHub (`github:syamai/wclass-games`)
-2. Automatically build the server (via `postinstall` script)
-3. Install other dependencies
+**제공 엔드포인트:**
+- `GET /cg/authenticate` - 사용자 인증 (JWT 토큰 검증)
+- `POST /cg/balance` - 사용자 잔액 조회
+- `POST /cg/transaction` - 거래 처리 (베팅/정산)
 
-### 4. Create your `.env` file
+**테스트 토큰:**
+- `user-token-123` → player1 (잔액: 10,000)
+- `user-token-456` → player2 (잔액: 5,000)
 
-Create a `.env` file in the examples directory:
+---
 
-```env
-AGENT_ID=your-agent-id
-AGENT_SECRET=your-agent-secret
-API_HOST=https://ca-api.cateleca.com/api/crypto
-```
-
-### 5. Run examples
+## 2. MCP 클라이언트 사용 예제 실행
 
 ```bash
-npm run example:basic
-```
-
----
-
-## Available Examples
-
-### 1. Basic Client (`basic-client.ts`)
-
-Demonstrates the fundamentals of connecting to the MCP server.
-
-```bash
-npm run example:basic
-```
-
-**What it does:**
-- Connects to the MCP server
-- Lists all available tools
-- Calls `get_agent_balance` tool
-- Disconnects from the server
-
----
-
-### 2. Agent Operations (`agent-operations.ts`)
-
-Demonstrates agent-level operations.
-
-```bash
-# Without user token (balance only)
-npm run example:agent
-
-# With user token (includes game launch)
-TEST_USER_TOKEN=eyJhbGciOi... npm run example:agent
-```
-
-**What it does:**
-- Check agent balance
-- Launch a game for a player (requires user token)
-
----
-
-### 3. Player Operations (`player-operations.ts`)
-
-Demonstrates player balance management.
-
-```bash
-TEST_USER_TOKEN=eyJhbGciOi... npm run example:player
-```
-
-**What it does:**
-- Check initial player balance
-- Deposit funds to player
-- Withdraw funds from player
-- Verify final balance
-
----
-
-### 4. Transaction Queries (`transaction-queries.ts`)
-
-Demonstrates how to query transaction history.
-
-```bash
-# Basic usage
-npm run example:transactions
-
-# Filter by user
-FILTER_USER_ID=1597876055493 npm run example:transactions
-
-# Look up specific transaction
-TRANSACTION_ID=e83adae1-dad8-4e29-ad09-d6ca99609c22 npm run example:transactions
-```
-
-**What it does:**
-- Get transfer history (deposits/withdrawals)
-- Get game transactions
-- Look up specific transaction by ID
-
----
-
-## Using in Your Own Project
-
-### Step 1: Add dependency
-
-In your `package.json`:
-
-```json
-{
-  "dependencies": {
-    "wclassgames-mcp": "github:syamai/wclass-games",
-    "@modelcontextprotocol/sdk": "^1.0.0"
-  },
-  "scripts": {
-    "postinstall": "cd node_modules/wclassgames-mcp && npm install && npm run build"
-  }
-}
-```
-
-### Step 2: Copy the MCP client wrapper
-
-Copy `mcp-client.ts` to your project, or write your own using the MCP SDK directly.
-
-### Step 3: Use the client
-
-```typescript
-import { WclassGamesMcpClient } from './mcp-client.js';
-
-async function main() {
-  const client = new WclassGamesMcpClient();
-
-  try {
-    // Connect to server
-    await client.connect();
-
-    // Use convenience methods
-    const balance = await client.getAgentBalance();
-    console.log('Agent Balance:', balance);
-
-    // Deposit to a player
-    const deposit = await client.deposit('user-jwt-token', 1000);
-    console.log('Deposit result:', deposit);
-
-    // Get transaction history
-    const history = await client.getTransferHistory({
-      page: 1,
-      size: 10,
-      userId: '1234567890'
-    });
-    console.log('History:', history);
-
-  } finally {
-    await client.disconnect();
-  }
-}
-
-main();
-```
-
-### Step 4: Create `.env` file
-
-```env
-AGENT_ID=your-agent-id
-AGENT_SECRET=your-agent-secret
-API_HOST=https://ca-api.cateleca.com/api/crypto
-```
-
----
-
-## Direct MCP SDK Usage
-
-If you prefer to use the MCP SDK directly without the wrapper:
-
-```typescript
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-
-const transport = new StdioClientTransport({
-  command: 'node',
-  args: ['node_modules/wclassgames-mcp/dist/index.js'],
-  env: {
-    ...process.env,
-    ENV_PATH: './.env',  // Path to your .env file
-  },
-});
-
-const client = new Client(
-  { name: 'my-app', version: '1.0.0' },
-  { capabilities: {} }
-);
-
-await client.connect(transport);
-
-// List available tools
-const tools = await client.listTools();
-console.log('Tools:', tools.tools.map(t => t.name));
-
-// Call a tool
-const result = await client.callTool({
-  name: 'get_agent_balance',
-  arguments: {}
-});
-
-// Parse result
-const content = result.content as Array<{ type: string; text: string }>;
-const data = JSON.parse(content[0].text);
-console.log('Balance:', data.balance);
-
-await client.close();
-```
-
----
-
-## Available Methods (MCP Client Wrapper)
-
-| Method | Description |
-|--------|-------------|
-| `connect()` | Connect to the MCP server |
-| `disconnect()` | Disconnect from the server |
-| `listTools()` | List all available tools |
-| `callTool(name, args)` | Call any tool directly |
-| `getAgentBalance()` | Get agent balance |
-| `launchGame(userToken)` | Launch game for player |
-| `getPlayerBalance(userToken)` | Get player balance |
-| `deposit(userToken, amount)` | Deposit to player |
-| `withdraw(userToken, amount)` | Withdraw from player |
-| `getTransferHistory(params)` | Get transfer history |
-| `getTransaction(id)` | Get specific transaction |
-| `getTransactions(params)` | Get transaction list |
-
----
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `AGENT_ID` | Your WCLASSGAMES agent ID | Yes (in .env) |
-| `AGENT_SECRET` | Your WCLASSGAMES secret key | Yes (in .env) |
-| `API_HOST` | API endpoint URL | No (has default) |
-| `TEST_USER_TOKEN` | JWT token for player operations | For player examples |
-| `FILTER_USER_ID` | Filter transactions by user ID | Optional |
-| `TRANSACTION_ID` | Specific transaction to look up | Optional |
-
----
-
-## Troubleshooting
-
-### Error: "MCP server not found"
-
-Make sure you ran `npm install`. The postinstall script should automatically build the server.
-
-If it still fails, try:
-```bash
-cd node_modules/wclassgames-mcp
+# 먼저 MCP 서버 빌드 (루트 디렉토리에서)
+cd /Users/ahnsungbin/Source/wclass-games
 npm install
 npm run build
+
+# .env 파일 설정
+cp .env.example .env
+# AGENT_ID, AGENT_SECRET 입력
+
+# 예제 실행
+cd examples
+npm run client
 ```
-
-### Error: "Missing required environment variable"
-
-Create a `.env` file in the examples directory with your credentials.
-
-### Error: "Cannot find module"
-
-Make sure you're using Node.js 18+ and have `"type": "module"` in your package.json.
 
 ---
 
-## File Structure
+## 3. 연동 플로우
 
-After `npm install`, your project should look like:
+### Balance Transfer 모드
 
 ```
-my-wclassgames-app/
-├── .env                      # Your credentials (create this)
-├── package.json
-├── tsconfig.json
-├── mcp-client.ts             # MCP client wrapper
-├── basic-client.ts           # Example file
-└── node_modules/
-    └── wclassgames-mcp/      # Installed from GitHub
-        ├── dist/             # Built server
-        │   └── index.js
-        └── src/              # Source code
+사용자 → Agent Site → MCP Server → WCLASSGAMES
+                          ↓
+                    launch_game
+                          ↓
+              WCLASSGAMES → /authenticate → Agent
+                          ↓
+                    launchUrl 반환
+                          ↓
+              사용자 → 게임 페이지 → 게임 플레이
+                          ↓
+              Agent → deposit/withdraw → WCLASSGAMES
+                          ↓
+                     잔액 업데이트
 ```
+
+### Seamless Wallet 모드
+
+```
+사용자 → Agent Site → MCP Server → WCLASSGAMES
+                          ↓
+                    launch_game
+                          ↓
+              WCLASSGAMES → /authenticate → Agent
+                          ↓
+                    launchUrl 반환
+                          ↓
+              사용자 → 게임 페이지 → 베팅
+                          ↓
+              WCLASSGAMES → /cg/transaction → Agent
+                          ↓
+                   Agent 잔액 차감 (change_amount < 0)
+                          ↓
+                      게임 결과
+                          ↓
+              WCLASSGAMES → /cg/transaction → Agent
+                          ↓
+                   Agent 잔액 정산 (change_amount > 0)
+```
+
+---
+
+## 4. Claude Desktop에서 사용 예시
+
+### 에이전트 잔액 확인
+```
+"WCLASSGAMES 에이전트 잔액을 확인해줘"
+```
+
+### 게임 런칭
+```
+"사용자 토큰 'user-token-123'으로 게임을 런칭해줘"
+```
+
+### 플레이어 입금/출금
+```
+"플레이어 토큰 'user-token-123'에 1000을 입금해줘"
+
+"플레이어 토큰 'user-token-123'에서 500을 출금해줘"
+```
+
+### 거래 내역 조회
+```
+"최근 거래 내역 10개를 보여줘"
+
+"거래 ID 'e83adae1-dad8-4e29-ad09-d6ca99609c22'의 상세 정보를 알려줘"
+```
+
+---
+
+## 5. MCP 도구 목록
+
+| 도구 | 설명 | 필수 파라미터 |
+|------|------|--------------|
+| `get_agent_balance` | 에이전트 잔액 조회 | - |
+| `launch_game` | 게임 런칭 URL 생성 | `userToken` |
+| `get_player_balance` | 플레이어 잔액 조회 | `userToken` |
+| `deposit` | 플레이어에게 입금 | `userToken`, `amount` |
+| `withdraw` | 플레이어로부터 출금 | `userToken`, `amount` |
+| `get_transfer_history` | 입출금 내역 조회 | - |
+| `get_transaction` | 특정 거래 조회 | `transactionId` |
+| `get_transactions` | 거래 목록 조회 | - |
+
+---
+
+## ★ Insight ─────────────────────────────────────
+
+**Agent 서버 구현 포인트:**
+
+1. **`/cg/authenticate`**: Bearer 토큰으로 사용자 검증 후 `userId`, `userName`, `email` 반환
+
+2. **`/cg/transaction`**: `x-cg-signature` 헤더로 RSA-SHA512 서명 검증 필수
+
+3. **멱등성 보장**: `nonce`로 중복 거래 체크, 이미 처리된 거래는 `AlreadyProcessed` 반환
+
+4. **잔액 부족**: `change_amount`가 음수이고 잔액이 부족하면 `InsufficientPlayerBalance` 반환
+
+─────────────────────────────────────────────────
